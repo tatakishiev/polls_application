@@ -14,10 +14,6 @@ defmodule PollsApplicationWeb.PollsStorage do
     "users"
   end
 
-  def init(init_arg) do
-    {:ok, []}
-  end
-
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, @start_value, name: @name)
   end
@@ -36,8 +32,8 @@ defmodule PollsApplicationWeb.PollsStorage do
   end
 
   def handle_call({:add_poll, poll}, _from, state) do
-    new_state = Enum.concat(state, [poll])
-    PubSub.broadcast(PollsApplication.PubSub, "polls", {:polls, new_state})
+    new_state = [poll | state]
+    PubSub.broadcast(PollsApplication.PubSub, "polls", %{poll: poll})
     {:reply, new_state, new_state}
   end
 end

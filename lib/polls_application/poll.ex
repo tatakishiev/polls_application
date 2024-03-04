@@ -1,3 +1,3 @@
-defmodule PollsApplication.Storage do
-  defstruct [:name, :description, :user, :options]
+defmodule PollsApplication.Poll do
+  defstruct [:id, :name, :description, :user, :options]
 end
