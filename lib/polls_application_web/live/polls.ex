@@ -45,7 +45,7 @@ defmodule PollsApplicationWeb.PollsLive.Index do
       </div>
     </.form>
 
-    <div>:user_name</div>
+    <div>@user</div>
 
     <.table id="poll" rows={@streams.polls}>
       <:col :let={{_id, poll}} label="Name"><%= poll.name %></:col>

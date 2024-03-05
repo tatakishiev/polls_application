@@ -1,5 +1,5 @@
-defmodule MyAppWeb.Presence do
+defmodule PollsApplication.Presence do
   use Phoenix.Presence,
-    otp_app: :my_app,
-    pubsub_server: MyApp.PubSub
+    otp_app: :application_poll,
+    pubsub_server: PollsApplication.PubSub
 end

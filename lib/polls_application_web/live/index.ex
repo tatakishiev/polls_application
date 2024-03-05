@@ -1,9 +1,17 @@
 defmodule PollsApplicationWeb.UserLive.Index do
+  alias PollsApplication.Poll
+  alias Phoenix.PubSub
   use PollsApplicationWeb, :live_view
 
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    user_id = UUID.uuid1()
+    PollsApplication.Presence.track(self(), "presense", socket.id, %{user_id: user_id})
+    initial_present = PollsApplication.Presence.list("presense")
+    IO.inspect(initial_present)
+
     socket =
       socket
+      |> assign(:current_user, session["current_user"])
       |> assign(:form, to_form(%{}))
 
     {:ok, socket}
@@ -12,9 +20,10 @@ defmodule PollsApplicationWeb.UserLive.Index do
   def handle_event("submit", %{"name" => params}, socket) do
     socket =
       socket
-      |> assign(:user_name, params)
+      |> assign(:current_user, params)
       |> put_flash(:info, "Hello #{params}")
-      |> push_navigate(to: ~p"/polls")
+
+    #      |> push_navigate(to: ~p"/polls")
 
     {:noreply, socket}
   end
@@ -32,6 +41,8 @@ defmodule PollsApplicationWeb.UserLive.Index do
         </button>
       </div>
     </.form>
+
+    <div>@current_user</div>
     """
   end
 end
