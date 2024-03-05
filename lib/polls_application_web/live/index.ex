@@ -10,12 +10,10 @@ defmodule PollsApplicationWeb.UserLive.Index do
   end
 
   def handle_event("submit", %{"name" => params}, socket) do
-    IO.inspect(params)
-
     socket =
       socket
-      |> put_flash(:info, "User created")
-      #  |> assign(:user, params.name)
+      |> assign(:user_name, params)
+      |> put_flash(:info, "Hello #{params}")
       |> push_navigate(to: ~p"/polls")
 
     {:noreply, socket}
