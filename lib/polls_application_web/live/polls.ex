@@ -9,6 +9,7 @@ defmodule PollsApplicationWeb.PollsLive.Index do
     polls = PollsStorage.current()
 
     current_user = session["current_user"]
+
     if current_user == nil do
       {:noreply, redirect(socket, to: "/")}
     end
