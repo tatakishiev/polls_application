@@ -44,6 +44,7 @@ defmodule PollsApplicationWeb.PollsLive.Index do
       <div>
         <.input field={@poll_form[:name]} type="text" label="Name" />
         <.input field={@poll_form[:description]} type="text" label="Description" />
+        <.input field={@poll_form[:options]} type="text" label="Options(Comma separated)" />
       </div>
       <div style="padding-top:20px">
         <button class="bg-black border border-black hover:bg-gray-700 text-white font-hold py-2 px-3 rounded-md">
@@ -54,7 +55,26 @@ defmodule PollsApplicationWeb.PollsLive.Index do
     <.table id="poll" rows={@streams.polls}>
       <:col :let={{_id, poll}} label="Name"><%= poll.name %></:col>
       <:col :let={{_id, poll}} label="Description"><%= poll.description %></:col>
+      <:action :let={{_id, poll}}>
+        <.link patch={~p"/polls/#{poll}/info"}>Show</.link>
+      </:action>
     </.table>
+
+    <.modal
+      :if={@live_action == :info}
+      id="poll-modal"
+      show
+      on_cancel={JS.patch(~p"/lesson/#{@lesson}")}
+    >
+      <.live_component
+        module={PollsApplicationWeb.PollComponent}
+        id={@lesson.id}
+        title={@page_title}
+        action={@live_action}
+        lesson={@lesson}
+        patch={~p"/lesson/#{@lesson}"}
+      />
+    </.modal>
     """
   end
 end
