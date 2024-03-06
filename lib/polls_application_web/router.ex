@@ -17,9 +17,9 @@ defmodule PollsApplicationWeb.Router do
   scope "/", PollsApplicationWeb do
     pipe_through :browser
 
-    # get "/", PageController, :home
+    get "/", PageController, :index
 
-    live "/", UserLive.Index
+    # live "/", UserLive.Index
     live "/polls", PollsLive.Index
   end
 

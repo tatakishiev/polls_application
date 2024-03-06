@@ -27,7 +27,6 @@ defmodule PollsApplicationWeb.PollsStorage do
   end
 
   def handle_call(:current, _from, polls) do
-    IO.inspect(polls)
     {:reply, polls, polls}
   end
 
