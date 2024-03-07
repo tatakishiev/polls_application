@@ -1,12 +1,13 @@
 defmodule PollsApplicationWeb.PollsLive.Index do
+  alias PollsApplication.Poll.PollOption
   alias PollsApplication.Poll
-  alias PollsApplicationWeb.PollsStorage
+  alias PollsApplication.PollsStorage
   alias Phoenix.PubSub
   use PollsApplicationWeb, :live_view
 
   def mount(_params, session, socket) do
     PubSub.subscribe(PollsApplication.PubSub, "polls")
-    polls = PollsStorage.current()
+    polls = Map.values(PollsStorage.get_all())
 
     current_user = session["current_user"]
 
@@ -24,17 +25,68 @@ defmodule PollsApplicationWeb.PollsLive.Index do
   end
 
   def handle_event("submit", %{"poll" => poll}, socket) do
-    poll = %Poll{id: UUID.uuid1(), name: poll["name"], description: poll["description"]}
+    user = socket.assigns.current_user
+
+    options =
+      String.split(poll["options"], ",")
+      |> Enum.map(fn x -> %PollOption{value: x, count: 0} end)
+
+    poll = %Poll{id: UUID.uuid1(), name: poll["name"], options: options, user: user}
     PollsStorage.add_poll(poll)
     {:noreply, socket}
   end
 
-  def handle_info(msg, socket) do
-    socket =
-      socket
-      |> stream_insert(:polls, msg[:poll], at: 0)
+  def handle_event("delete", %{"poll-id" => poll_id}, socket) do
+    current_user = socket.assigns.current_user
 
-    {:noreply, socket}
+    case PollsStorage.get_by_id(poll_id) do
+      {:ok, poll} ->
+        if poll.user != current_user do
+          socket = socket |> assign(error: "No no no...You are not poll owner")
+          {:noreply, socket}
+        else
+          PollsStorage.delete(poll)
+          {:noreply, socket}
+        end
+    end
+  end
+
+  def handle_event("upvote", %{"poll-id" => poll_id, "option" => value}, socket) do
+    case PollsStorage.get_by_id(poll_id) do
+      {:ok, poll} ->
+        IO.inspect(poll)
+        PollsStorage.upvote(poll, value)
+        {:noreply, socket}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_info(event, socket) do
+    case event do
+      {:created, poll} ->
+        socket =
+          socket
+          |> stream_insert(:polls, poll, at: -1)
+
+        {:noreply, socket}
+
+      {:deleted, poll} ->
+        socket =
+          socket
+          |> stream_delete(:polls, poll)
+
+        {:noreply, socket}
+
+      {:updated, poll} ->
+        socket =
+          socket
+          |> stream_delete(:polls, poll)
+          |> stream_insert(:polls, poll, at: -1)
+
+        {:noreply, socket}
+    end
   end
 
   def render(assigns) do
@@ -43,7 +95,6 @@ defmodule PollsApplicationWeb.PollsLive.Index do
     <.form class="mb-6" for={@poll_form} phx-submit="submit">
       <div>
         <.input field={@poll_form[:name]} type="text" label="Name" />
-        <.input field={@poll_form[:description]} type="text" label="Description" />
         <.input field={@poll_form[:options]} type="text" label="Options(Comma separated)" />
       </div>
       <div style="padding-top:20px">
@@ -52,29 +103,34 @@ defmodule PollsApplicationWeb.PollsLive.Index do
         </button>
       </div>
     </.form>
-    <.table id="poll" rows={@streams.polls}>
-      <:col :let={{_id, poll}} label="Name"><%= poll.name %></:col>
-      <:col :let={{_id, poll}} label="Description"><%= poll.description %></:col>
-      <:action :let={{_id, poll}}>
-        <.link patch={~p"/polls/#{poll}/info"}>Show</.link>
-      </:action>
-    </.table>
 
-    <.modal
-      :if={@live_action == :info}
-      id="poll-modal"
-      show
-      on_cancel={JS.patch(~p"/lesson/#{@lesson}")}
-    >
-      <.live_component
-        module={PollsApplicationWeb.PollComponent}
-        id={@lesson.id}
-        title={@page_title}
-        action={@live_action}
-        lesson={@lesson}
-        patch={~p"/lesson/#{@lesson}"}
-      />
-    </.modal>
+    <div :for={{id, poll} <- @streams.polls} id={id}>
+      <div id={id}>
+        <p class="font-bold text-lg mb-2">Poll name: <%= poll.name %></p>
+        <%= if poll.user == @current_user do %>
+          <button
+            phx-click="delete"
+            phx-value-poll-id={poll.id}
+            class="px-4 py-2 bg-red-500 text-white rounded-lg"
+          >
+            Delete Poll
+          </button>
+        <% end %>
+        <%= for option <- poll.options do %>
+          <div class="flex items-center gap-2 mb-2">
+            <button
+              phx-click="upvote"
+              phx-value-poll-id={poll.id}
+              phx-value-option={option.value}
+              class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+            >
+              <%= option.value %>
+            </button>
+            <span class="text-sm font-medium"><%= option.count %> votes</span>
+          </div>
+        <% end %>
+      </div>
+    </div>
     """
   end
 end

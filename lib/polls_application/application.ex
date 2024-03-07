@@ -8,7 +8,8 @@ defmodule PollsApplication.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      PollsApplicationWeb.PollsStorage,
+      PollsApplication.PollsStorage,
+      PollsApplication.UserStorage,
       {DNSCluster, query: Application.get_env(:polls_application, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: PollsApplication.PubSub},
       # Start a worker by calling: PollsApplication.Worker.start_link(arg)

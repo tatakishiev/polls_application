@@ -19,7 +19,6 @@ defmodule PollsApplicationWeb.Router do
 
     get "/", PageController, :index
 
-    # live "/", UserLive.Index
     live "/polls", PollsLive.Index
   end
 

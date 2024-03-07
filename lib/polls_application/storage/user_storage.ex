@@ -1,8 +1,6 @@
 defmodule PollsApplication.UserStorage do
   use GenServer
 
-  @name :polls_server
-
   def init(_init_arg) do
     {:ok, %{}}
   end
@@ -12,11 +10,15 @@ defmodule PollsApplication.UserStorage do
   end
 
   def add_user(user_name) do
-    GenServer.call(@name, {:add_user, user_name})
+    GenServer.call(__MODULE__, {:add_user, user_name})
   end
 
   def handle_call({:add_user, user_name}, _from, state) do
-    Map.put(state, user_name, user_name)
-    {:reply, state, state}
+    if Map.has_key?(state, user_name) do
+      {:reply, {:error, "username #{user_name} already taken"}, state}
+    else
+      Map.put(state, user_name, user_name)
+      {:reply, :ok, state}
+    end
   end
 end
