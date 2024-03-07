@@ -1,10 +1,13 @@
 defmodule PollsApplication.PollsStorage do
   use GenServer
-  alias ElixirSense.Core.Struct
   alias Phoenix.PubSub
 
   @name :polls_server
 
+  def init(_init_arg) do
+    {:ok, %{}}
+  end
+  
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, %{}, name: @name)
   end

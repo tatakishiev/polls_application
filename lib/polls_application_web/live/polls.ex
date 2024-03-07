@@ -105,24 +105,26 @@ defmodule PollsApplicationWeb.PollsLive.Index do
     </.form>
 
     <div :for={{id, poll} <- @streams.polls} id={id}>
-      <div id={id}>
-        <p class="font-bold text-lg mb-2">Poll name: <%= poll.name %></p>
+      <p class="font-bold text-lg mb-2">Poll name: <%= poll.name %></p>
+      <div class ="flex items-center gap-2 mb-2">
         <%= if poll.user == @current_user do %>
           <button
             phx-click="delete"
             phx-value-poll-id={poll.id}
-            class="px-4 py-2 bg-red-500 text-white rounded-lg"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           >
             Delete Poll
           </button>
         <% end %>
+      </div>
+      <div class = "flex items-center gap-2 mb-2">
         <%= for option <- poll.options do %>
           <div class="flex items-center gap-2 mb-2">
             <button
               phx-click="upvote"
               phx-value-poll-id={poll.id}
               phx-value-option={option.value}
-              class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+              class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
             >
               <%= option.value %>
             </button>
