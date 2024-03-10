@@ -1,4 +1,5 @@
 defmodule PollsApplicationWeb.PollsLive.Index do
+  alias PollsApplication.UserStorage
   alias PollsApplication.Poll.PollOption
   alias PollsApplication.Poll
   alias PollsApplication.PollsStorage
@@ -52,14 +53,22 @@ defmodule PollsApplicationWeb.PollsLive.Index do
   end
 
   def handle_event("upvote", %{"poll-id" => poll_id, "option" => value}, socket) do
-    case PollsStorage.get_by_id(poll_id) do
-      {:ok, poll} ->
-        IO.inspect(poll)
-        PollsStorage.upvote(poll, value)
-        {:noreply, socket}
+    current_user = socket.assigns.current_user
 
-      _ ->
-        {:noreply, socket}
+    case UserStorage.vote(current_user, poll_id, value) do
+      {:ok} ->
+        case PollsStorage.get_by_id(poll_id) do
+          {:ok, poll} ->
+            IO.inspect(poll)
+            PollsStorage.upvote(poll, value)
+            {:noreply, socket}
+
+          _ ->
+            {:noreply, socket}
+        end
+
+      {:error, message} ->
+        socket |> put_flash(:error, message)
     end
   end
 
@@ -67,6 +76,7 @@ defmodule PollsApplicationWeb.PollsLive.Index do
     case event do
       {:created, poll} ->
         IO.inspect(socket)
+
         socket =
           socket
           |> stream_insert(:polls, poll, at: -1)
@@ -107,7 +117,7 @@ defmodule PollsApplicationWeb.PollsLive.Index do
 
     <div :for={{id, poll} <- @streams.polls} id={id}>
       <p class="font-bold text-lg mb-2">Poll name: <%= poll.name %></p>
-      <div class ="flex items-center gap-2 mb-2">
+      <div class="flex items-center gap-2 mb-2">
         <%= if poll.user == @current_user do %>
           <button
             phx-click="delete"
@@ -118,7 +128,7 @@ defmodule PollsApplicationWeb.PollsLive.Index do
           </button>
         <% end %>
       </div>
-      <div class = "flex items-center gap-2 mb-2">
+      <div class="flex items-center gap-2 mb-2">
         <%= for option <- poll.options do %>
           <div class="flex items-center gap-2 mb-2">
             <button

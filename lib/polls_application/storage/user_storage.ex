@@ -33,9 +33,19 @@ defmodule PollsApplication.UserStorage do
     if Map.has_key?(state, username) == false do
       {:reply, {:error, "User: #{username} does not exist"}, state}
     else
-      votes = state[username].votes
-      Enum.filter(votes, fn x -> x.id == poll_id end)
-        |> 
+      user = state[username]
+      votes = user.votes
+      vote = Enum.filter(votes, fn x -> x.id == poll_id end)
+
+      if vote != option do
+        new_vote = %UserVote{poll_id: poll_id, vote: option}
+        new_votes = [new_vote | votes]
+        new_user = user |> struct(%{votes: new_votes})
+        Map.put(state, username, new_user)
+        {:reply, :ok, state}
+      end
+    else
+      {:reply, {:error, "User #{username} already voted"}}
     end
   end
 end
