@@ -66,6 +66,7 @@ defmodule PollsApplicationWeb.PollsLive.Index do
   def handle_info(event, socket) do
     case event do
       {:created, poll} ->
+        IO.inspect(socket)
         socket =
           socket
           |> stream_insert(:polls, poll, at: -1)
