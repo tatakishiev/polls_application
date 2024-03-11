@@ -21,6 +21,7 @@ defmodule PollsApplicationWeb.PollsLive.Index do
       |> stream(:polls, polls)
       |> assign(:poll_form, to_form(%{}, as: :poll))
       |> assign(:current_user, current_user)
+    IO.inspect(socket)
 
     {:ok, socket}
   end
@@ -56,39 +57,42 @@ defmodule PollsApplicationWeb.PollsLive.Index do
     current_user = socket.assigns.current_user
 
     case UserStorage.vote(current_user, poll_id, value) do
-      {:ok} ->
+      :ok ->
         case PollsStorage.get_by_id(poll_id) do
           {:ok, poll} ->
-            IO.inspect(poll)
             PollsStorage.upvote(poll, value)
             {:noreply, socket}
 
-          _ ->
+          {:error, message} ->
+            socket |> put_flash(:error, message)
+            {:noreply, socket}
+        end
+
+      {:ok, new_vote, old_vote} ->
+        case PollsStorage.get_by_id(poll_id) do
+          {:ok, poll} ->
+            PollsStorage.upvote(poll, new_vote, old_vote)
+            {:noreply, socket}
+
+          {:error, message} ->
+            socket |> put_flash(:error, message)
             {:noreply, socket}
         end
 
       {:error, message} ->
-        socket |> put_flash(:error, message)
+        socket = socket |> put_flash(:error, message)
+        {:noreply, socket}
     end
   end
 
   def handle_info(event, socket) do
     case event do
       {:created, poll} ->
-        IO.inspect(socket)
-
-        socket =
-          socket
-          |> stream_insert(:polls, poll, at: -1)
-
-        {:noreply, socket}
+        IO.inspect(poll)
+        {:noreply, stream_insert(socket, :polls, poll, at: -1)}
 
       {:deleted, poll} ->
-        socket =
-          socket
-          |> stream_delete(:polls, poll)
-
-        {:noreply, socket}
+        {:noreply, stream_delete(socket, :polls, poll)}
 
       {:updated, poll} ->
         socket =

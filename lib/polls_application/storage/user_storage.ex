@@ -1,4 +1,5 @@
 defmodule PollsApplication.UserStorage do
+  alias Hex.API.User
   alias PollsApplication.User
   alias PollsApplication.User.UserVote
   use GenServer
@@ -24,28 +25,41 @@ defmodule PollsApplication.UserStorage do
       {:reply, {:error, "username #{username} already taken"}, state}
     else
       user = %User{username: username, votes: []}
-      Map.put(state, username, user)
-      {:reply, :ok, state}
+      new_state = Map.put(state, username, user)
+      {:reply, :ok, new_state}
     end
   end
 
   def handle_call({:vote, username, poll_id, option}, _from, state) do
-    if Map.has_key?(state, username) == false do
-      {:reply, {:error, "User: #{username} does not exist"}, state}
+    if Map.has_key?(state, username) === false do
+      {:reply, {:eror, "User: #{username} does not exist"}, state}
     else
       user = state[username]
       votes = user.votes
-      vote = Enum.filter(votes, fn x -> x.id == poll_id end)
+      vote = Enum.find(votes, fn x -> x.poll_id == poll_id end)
 
-      if vote != option do
-        new_vote = %UserVote{poll_id: poll_id, vote: option}
-        new_votes = [new_vote | votes]
-        new_user = user |> struct(%{votes: new_votes})
-        Map.put(state, username, new_user)
-        {:reply, :ok, state}
+      cond do
+        Enum.empty?(votes) ->
+          new_vote = %UserVote{poll_id: poll_id, vote: option}
+          new_votes = [new_vote | votes]
+          new_user = Map.replace(user, :votes, new_votes)
+          new_state = Map.replace(state, username, new_user)
+          {:reply, :ok, new_state}
+        vote == nil ->
+          new_vote = %UserVote{poll_id: poll_id, vote: option}
+          new_votes = [new_vote | votes]
+          new_user = Map.replace(user, :votes, new_votes)
+          new_state = Map.replace(state, username, new_user)
+          {:reply, :ok, new_state}
+        vote != option ->
+          new_vote = %UserVote{poll_id: poll_id, vote: option}
+          new_votes = List.delete(votes, vote)
+          new_votes = [new_vote | new_votes]
+          new_user = Map.replace(user, :votes, new_votes)
+          new_state = Map.replace(state, username, new_user)
+          {:reply, {:ok, option, vote.vote}, new_state}
+        true -> {:reply, {:error, "User #{username} already voted"}, state}
       end
-    else
-      {:reply, {:error, "User #{username} already voted"}}
     end
   end
 end
