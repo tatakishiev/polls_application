@@ -12,16 +12,11 @@ defmodule PollsApplicationWeb.PollsLive.Index do
 
     current_user = session["current_user"]
 
-    if current_user == nil do
-      {:noreply, redirect(socket, to: "/")}
-    end
-
     socket =
       socket
       |> stream(:polls, polls)
       |> assign(:poll_form, to_form(%{}, as: :poll))
       |> assign(:current_user, current_user)
-    IO.inspect(socket)
 
     {:ok, socket}
   end
@@ -87,20 +82,14 @@ defmodule PollsApplicationWeb.PollsLive.Index do
 
   def handle_info(event, socket) do
     case event do
-      {:created, poll} ->
-        IO.inspect(poll)
-        {:noreply, stream_insert(socket, :polls, poll, at: -1)}
+      {:created, _} ->
+        {:noreply, stream(socket, :polls, Map.values(PollsStorage.get_all()))}
 
-      {:deleted, poll} ->
-        {:noreply, stream_delete(socket, :polls, poll)}
+      {:deleted, _} ->
+        {:noreply, stream(socket, :polls, Map.values(PollsStorage.get_all()))}
 
-      {:updated, poll} ->
-        socket =
-          socket
-          |> stream_delete(:polls, poll)
-          |> stream_insert(:polls, poll, at: -1)
-
-        {:noreply, socket}
+      {:updated, _} ->
+        {:noreply, stream(socket, :polls, Map.values(PollsStorage.get_all()))}
     end
   end
 
